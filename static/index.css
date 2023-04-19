@@ -1,0 +1,31 @@
+body {
+    font-family: sans-serif;
+}
+
+fieldset {
+    width: fit-content;
+}
+
+.track-list {
+    display: flex;
+    flex-direction: row;
+}
+
+.horizontal-table {
+    display: flex;
+    flex-direction: row;
+}
+
+.horizontal-table tr {
+    display: flex;
+    flex-direction: column;
+    margin: 0.3em;
+}
+
+.horizontal-table th {
+    align-self: flex-end;
+}
+
+.horizontal-table td {
+    align-self: flex-start;
+}

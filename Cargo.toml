@@ -1,0 +1,30 @@
+[package]
+name = "pso-slbgm"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+lto = true
+
+[lib]
+crate-type = ["cdylib"]
+path = "wasm/lib.rs"
+
+[dependencies]
+lewton = "0.10.2"
+wasm-bindgen = "0.2.84"
+js-sys = "0.3.61"
+wasm-bindgen-futures = "0.4.34"
+
+[dependencies.web-sys]
+version = "0.3.61"
+features = [
+    "console",
+    "Request",
+    "RequestInit",
+    "Response",
+    "DedicatedWorkerGlobalScope"
+]
+
+[target."cfg(debug_assertions)".dependencies]
+console_error_panic_hook = "0.1.7"
