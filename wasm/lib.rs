@@ -91,6 +91,15 @@ impl OggProcessor {
         return Ok(Self { streams });
     }
 
+    pub async fn from_buffer(buf: Uint8Array) -> Result<OggProcessor, JsValue> {
+        let file_contents = buf.to_vec();
+        let streams = match decode_ogg(&file_contents) {
+            Ok(s) => s,
+            Err(err) => return Err(JsValue::from_str(&err.to_string())),
+        };
+        return Ok(Self { streams });
+    }
+
     pub fn get_stream_count(&self) -> u32 {
         return self.streams.len() as u32;
     }

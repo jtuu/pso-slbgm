@@ -60,13 +60,21 @@ export const TrackControls = (get_track_count, get_track_index, change_track) =>
             } else {
                 current_track_label = String(track_index);
             }
+
+            let tracks;
+            if (track_count < 1) {
+                tracks = m("div", "No tracks");
+            } else {
+                button_labels.map((label, i) => m("button", {
+                    disabled: i == track_index,
+                    onclick: () => change_track(i)
+                }, label));
+            }
+
             return m("fieldset",
                 m("legend", "Current track: " + current_track_label),
                 m("div", "Transition to track: ",
-                    button_labels.map((label, i) => m("button", {
-                        disabled: i == track_index,
-                        onclick: () => change_track(i)
-                    }, label))));
+                    tracks));
         }
     };
 };
@@ -164,13 +172,54 @@ export const TrackPartQueue = (stream_queue, part_queue, track_labels) => {
                     m("th", "Stream"),
                     m("th", "Transition")),
                 rows);
-            
+
             const status_label = stopped ? "Stopped" : "Playing";
             return m("fieldset",
                 m("legend", "Playback queue"),
                 table,
                 m("div", "Status: " + status_label),
                 vnode.children);
+        }
+    };
+};
+
+export const InputSelector = (presets, process_slbgm_from_path, process_slbgm_from_file) => {
+    let selected_slbgm_file = null;
+    let selected_slbgm_filename = null;
+    let selected_transition_file = null;
+    return {
+        view() {
+            return m("fieldset",
+                m("legend", "Choose input"),
+                m("fieldset",
+                    m("legend", "Preset"),
+                    presets.map(({ file_path, transitions }) => {
+                        return m("button", {
+                            onclick: () => process_slbgm_from_path(file_path, transitions).then(() => m.redraw())
+                        }, "Load " + file_path)
+                    })),
+                m("fieldset",
+                    m("legend", "Local file"),
+                    m("div", m("label", "slbgm ogg file: "),
+                        m("input", {
+                            type: "file",
+                            accept: ".ogg",
+                            onchange: e => {
+                                selected_slbgm_file = e.target.files[0];
+                                const path_parts = e.target.value.split(/\/|\\/);
+                                selected_slbgm_filename = path_parts[path_parts.length - 1];
+                            }
+                        })),
+                    m("div", m("label", "(Optional) transition definition file: "),
+                        m("input", {
+                            type: "file",
+                            accept: ".txt",
+                            onchange: e => selected_transition_file = e.target.files[0]
+                        })),
+                    m("button", {
+                        disabled: !selected_slbgm_file,
+                        onclick: () => process_slbgm_from_file(selected_slbgm_filename, selected_slbgm_file, selected_transition_file)
+                    }, "Load selected")));
         }
     };
 };

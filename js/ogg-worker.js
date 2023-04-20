@@ -18,13 +18,36 @@ function send_results(ogg_processor) {
     }
 }
 
+function read_file(file) {
+    const reader = new FileReader();
+    const result = new Promise((resolve, reject) => {
+        reader.onerror = reject;
+        reader.onabort = reject;
+        reader.onload = () => resolve(reader.result);
+    });
+    reader.readAsArrayBuffer(file);
+    return result;
+}
+
 async function init_wasm_in_worker() {
     const wasm_loading = wasm_bindgen('./pkg/index_bg.wasm');
 
     self.onmessage = async event => {
         switch (event.data.message_type) {
             case "BeginFromPath":
-                wasm_loading.then(() => OggProcessor.from_path(event.data.file_path).then(send_results));
+                {
+                    await wasm_loading;
+                    const ogg_processor = await OggProcessor.from_path(event.data.file_path);
+                    send_results(ogg_processor);
+                }
+                break;
+            case "BeginFromFile":
+                {
+                    await wasm_loading;
+                    const buf = new Uint8Array(await read_file(event.data.file));
+                    const ogg_processor = await OggProcessor.from_buffer(buf);
+                    send_results(ogg_processor);
+                }
                 break;
         }
     };

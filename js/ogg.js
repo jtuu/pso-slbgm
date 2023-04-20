@@ -98,6 +98,12 @@ export const OggWorkerHandler = () => {
                 worker.onmessage = worker_message_handlers.receiving_stream_count(audio, ogg, resolve);
                 worker.postMessage({ message_type: "BeginFromPath", file_path: file_path });
             });
+        },
+        from_file(audio, ogg, file) {
+            return new Promise((resolve, reject) => {
+                worker.onmessage = worker_message_handlers.receiving_stream_count(audio, ogg, resolve);
+                worker.postMessage({ message_type: "BeginFromFile", file: file });
+            });
         }
     };
 };

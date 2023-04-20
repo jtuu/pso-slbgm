@@ -67,6 +67,11 @@ export class TrackTransitions {
         }
         return new TrackTransitions(tracks);
     }
+
+    static from_file(file) {
+        const tracks = [];
+        return new TrackTransitions(tracks);
+    }
 }
 export const forest_transitions = TrackTransitions.from_values(
     [0, 24, 4, 25, 1, 4, 4, 4, 26, 2, 8, 8, 4, 27, 3, 12, 12, 4, 28, 4, 16, 16, 4, 29, 5, 20, 20, 4, 30, 0],

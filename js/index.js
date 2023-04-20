@@ -1,7 +1,7 @@
 import m from "mithril";
 import { Ogg, OggWorkerHandler } from "./ogg";
 import { TrackTransitions, forest_transitions } from "./slbgm";
-import { Timer, StreamButtons, TrackControls, TrackPartList, TrackPartQueue, generate_track_labels } from "./components";
+import { Timer, StreamButtons, TrackControls, TrackPartList, TrackPartQueue, InputSelector, generate_track_labels } from "./components";
 
 const wasm_loading = wasm_bindgen();
 
@@ -13,14 +13,18 @@ const App = () => {
     let play_start_time = Infinity;
     let queue_duration = 0;
     let track_index = 0;
-    let track_transitions = forest_transitions;
+    let track_transitions = new TrackTransitions([]);
     const track_part_queue = [];
     const stream_queue = [];
     let queue_updater_timeout = null;
     let stream_stopper_timeout = null;
 
-    const process_ogg_from_path = file_path => {
+    const init_audio_from_gesture = () => {
         if (!audio) audio = new AudioContext();
+    };
+
+    const process_slbgm_from_path = async (file_path, transitions) => {
+        init_audio_from_gesture();
         // One file at a time
         if (is_processing_ogg) return Promise.reject();
 
@@ -28,10 +32,28 @@ const App = () => {
         is_file_selected = true;
         is_processing_ogg = true;
         ogg.filename = file_path;
-        return ogg_worker.from_path(audio, ogg, file_path)
-            .then(() => {
-                is_processing_ogg = false;
-            });
+        track_transitions = transitions;
+        await ogg_worker.from_path(audio, ogg, file_path);
+        is_processing_ogg = false;
+        m.redraw();
+    };
+
+    const process_slbgm_from_file = async (filename, slbgm_file, transition_file) => {
+        init_audio_from_gesture();
+        if (is_processing_ogg) return Promise.reject();
+
+        const ogg_worker = OggWorkerHandler();
+        is_file_selected = true;
+        is_processing_ogg = true;
+        ogg.filename = filename;
+        const worker_working = ogg_worker.from_file(audio, ogg, slbgm_file);
+        if (transition_file) {
+            // Parse transition file while worker is working
+            track_transitions = TrackTransitions.from_file(transition_file);
+        }
+        await worker_working;
+        is_processing_ogg = false;
+        m.redraw();
     };
 
     const is_playing = () => {
@@ -179,6 +201,13 @@ const App = () => {
         }
     };
 
+    const input_selector = InputSelector([
+        {
+            file_path: "slbgm_forest.ogg",
+            transitions: forest_transitions
+        }
+    ], process_slbgm_from_path, process_slbgm_from_file);
+
     const timer = Timer(playback_position, is_playing);
     const stream_buttons = StreamButtons(ogg.streams, play_stream);
     const track_controls = TrackControls(get_track_count, get_track_index, change_track);
@@ -194,10 +223,7 @@ const App = () => {
     return {
         view() {
             if (!is_file_selected) {
-                const file_path = "slbgm_forest.ogg";
-                return m("button", {
-                    onclick: () => process_ogg_from_path(file_path).then(() => m.redraw())
-                }, "Load " + file_path);
+                return m(input_selector);
             }
             if (is_processing_ogg) {
                 return m("div", "Loading...");
@@ -205,7 +231,7 @@ const App = () => {
             return m("fieldset",
                 m("legend", ogg.filename),
                 m(stream_buttons),
-                m("div.track-list", track_part_lists),
+                m("div.track-list", track_transitions.tracks.length < 1 ? "No tracks" : track_part_lists),
                 m(queue,
                     m(timer),
                     m("button", { disabled: !is_playing(), onclick: stop_playback }, "Stop")),
