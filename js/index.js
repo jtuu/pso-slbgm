@@ -1,7 +1,7 @@
 import m from "mithril";
 import { Ogg, OggWorkerHandler } from "./ogg";
 import { TrackTransitions, forest_transitions } from "./slbgm";
-import { Timer, StreamButtons, TrackControls, TrackPartList, TrackPartQueue, InputSelector, generate_track_labels } from "./components";
+import { Timer, StreamButtons, TrackControls, TrackList, TrackPartQueue, InputSelector, generate_track_labels } from "./components";
 
 const wasm_loading = wasm_bindgen();
 
@@ -14,6 +14,7 @@ const App = () => {
     let queue_duration = 0;
     let track_index = 0;
     let track_transitions = new TrackTransitions([]);
+    const track_labels = [];
     const track_part_queue = [];
     const stream_queue = [];
     let queue_updater_timeout = null;
@@ -21,6 +22,11 @@ const App = () => {
 
     const init_audio_from_gesture = () => {
         if (!audio) audio = new AudioContext();
+    };
+
+    const regenerate_track_data = (transitions) => {
+        track_transitions.tracks.splice(0, track_transitions.tracks.length, ...transitions.tracks);
+        track_labels.splice(0, track_labels.length, ...generate_track_labels(transitions.tracks.length));
     };
 
     const process_slbgm_from_path = async (file_path, transitions) => {
@@ -32,9 +38,9 @@ const App = () => {
         is_file_selected = true;
         is_processing_ogg = true;
         ogg.filename = file_path;
-        track_transitions = transitions;
         await ogg_worker.from_path(audio, ogg, file_path);
         is_processing_ogg = false;
+        regenerate_track_data(transitions);
         m.redraw();
     };
 
@@ -49,7 +55,8 @@ const App = () => {
         const worker_working = ogg_worker.from_file(audio, ogg, slbgm_file);
         if (transition_file) {
             // Parse transition file while worker is working
-            track_transitions = TrackTransitions.from_file(transition_file);
+            const transitions = TrackTransitions.from_file(transition_file);
+            regenerate_track_data(transitions);
         }
         await worker_working;
         is_processing_ogg = false;
@@ -211,13 +218,7 @@ const App = () => {
     const timer = Timer(playback_position, is_playing);
     const stream_buttons = StreamButtons(ogg.streams, play_stream);
     const track_controls = TrackControls(get_track_count, get_track_index, change_track);
-
-    const track_labels = generate_track_labels(track_transitions.tracks.length);
-    const track_part_lists = track_labels.map((track_label, i) => {
-        const track_parts = track_transitions.tracks[i];
-        return m(TrackPartList(i, track_label, track_parts, change_track, play_track_part, is_playing));
-    });
-
+    const track_list = TrackList(track_labels, track_transitions.tracks, change_track, play_track_part);
     const queue = TrackPartQueue(stream_queue, track_part_queue, track_labels);
 
     return {
@@ -231,7 +232,7 @@ const App = () => {
             return m("fieldset",
                 m("legend", ogg.filename),
                 m(stream_buttons),
-                m("div.track-list", track_transitions.tracks.length < 1 ? "No tracks" : track_part_lists),
+                m(track_list),
                 m(queue,
                     m(timer),
                     m("button", { disabled: !is_playing(), onclick: stop_playback }, "Stop")),

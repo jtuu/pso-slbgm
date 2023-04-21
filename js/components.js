@@ -65,7 +65,7 @@ export const TrackControls = (get_track_count, get_track_index, change_track) =>
             if (track_count < 1) {
                 tracks = m("div", "No tracks");
             } else {
-                button_labels.map((label, i) => m("button", {
+                tracks = button_labels.map((label, i) => m("button", {
                     disabled: i == track_index,
                     onclick: () => change_track(i)
                 }, label));
@@ -79,35 +79,45 @@ export const TrackControls = (get_track_count, get_track_index, change_track) =>
     };
 };
 
-export const TrackPartList = (track_index, track_label, parts, change_track, play_track_part) => {
+export const TrackList = (track_labels, tracks, change_track, play_track_part) => {
     return {
         view() {
-            return m("fieldset",
-                m("legend", `Track ${track_label}`),
-                m("table.horizontal-table",
-                    m("tr",
-                        m("th", "#"),
-                        m("th", "First stream"),
-                        m("th", "Last stream"),
-                        m("th", "Next part"),
-                        m("th", "Transition into"),
-                        m("th", "Transition out"),
-                        m("th", "Begin playing track")),
-                    parts.map((part, i) => {
-                        return m("tr",
-                            m("td", String(i)),
-                            m("td", String(part.stream_index)),
-                            m("td", String(part.stream_index + part.part_length - 1)),
-                            m("td", String(part.next_part)),
-                            m("td", String(part.transition_into_stream)),
-                            m("td", String(part.transition_out_stream)),
-                            m("td", m("button", {
-                                onclick: () => {
-                                    change_track(track_index);
-                                    play_track_part(part);
-                                }
-                            }, "Play")))
-                    })));
+            let track_part_lists;
+            if (track_labels.length < 1) {
+                track_part_lists = "No tracks";
+            } else {
+                track_part_lists = track_labels.map((track_label, track_index) => {
+                    const track_parts = tracks[track_index];
+                    return m("fieldset",
+                        m("legend", `Track ${track_label}`),
+                        m("table.horizontal-table",
+                            m("tr",
+                                m("th", "#"),
+                                m("th", "First stream"),
+                                m("th", "Last stream"),
+                                m("th", "Next part"),
+                                m("th", "Transition into"),
+                                m("th", "Transition out"),
+                                m("th", "Begin playing track")),
+                            track_parts.map((part, i) => {
+                                return m("tr",
+                                    m("td", String(i)),
+                                    m("td", String(part.stream_index)),
+                                    m("td", String(part.stream_index + part.part_length - 1)),
+                                    m("td", String(part.next_part)),
+                                    m("td", String(part.transition_into_stream)),
+                                    m("td", String(part.transition_out_stream)),
+                                    m("td", m("button", {
+                                        onclick: () => {
+                                            change_track(track_index);
+                                            play_track_part(part);
+                                        }
+                                    }, "Play")))
+                            })));
+                });
+            }
+
+            return m("div.track-list", track_part_lists);
         }
     };
 };
