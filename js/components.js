@@ -1,4 +1,5 @@
 import m from "mithril";
+import { slbgm_transition_presets } from "./slbgm";
 
 export function generate_track_labels(track_count) {
     if (track_count == 2) {
@@ -92,7 +93,7 @@ export const TrackList = (track_labels, tracks, change_track, play_track_part) =
                         m("legend", `Track ${track_label}`),
                         m("table.horizontal-table",
                             m("tr",
-                                m("th", "#"),
+                                m("th", "Part"),
                                 m("th", "First stream"),
                                 m("th", "Last stream"),
                                 m("th", "Next part"),
@@ -193,7 +194,7 @@ export const TrackPartQueue = (stream_queue, part_queue, track_labels) => {
     };
 };
 
-export const InputSelector = (presets, process_slbgm_from_path, process_slbgm_from_file) => {
+export const InputSelector = (process_slbgm_from_path, process_slbgm_from_file) => {
     let selected_slbgm_file = null;
     let selected_slbgm_filename = null;
     let selected_transition_file = null;
@@ -203,7 +204,7 @@ export const InputSelector = (presets, process_slbgm_from_path, process_slbgm_fr
                 m("legend", "Choose input"),
                 m("fieldset",
                     m("legend", "Preset"),
-                    presets.map(({ file_path, transitions }) => {
+                    slbgm_transition_presets.map(({ file_path, transitions }) => {
                         return m("button", {
                             onclick: () => process_slbgm_from_path(file_path, transitions).then(() => m.redraw())
                         }, "Load " + file_path)

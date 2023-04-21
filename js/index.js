@@ -208,12 +208,7 @@ const App = () => {
         }
     };
 
-    const input_selector = InputSelector([
-        {
-            file_path: "slbgm_forest.ogg",
-            transitions: forest_transitions
-        }
-    ], process_slbgm_from_path, process_slbgm_from_file);
+    const input_selector = InputSelector(process_slbgm_from_path, process_slbgm_from_file);
 
     const timer = Timer(playback_position, is_playing);
     const stream_buttons = StreamButtons(ogg.streams, play_stream);

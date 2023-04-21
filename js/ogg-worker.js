@@ -44,7 +44,7 @@ async function init_wasm_in_worker() {
             case "BeginFromFile":
                 {
                     await wasm_loading;
-                    const buf = new Uint8Array(await read_file(event.data.file));
+                    const buf = new Uint8Array(await read_file(event.data.file, true));
                     const ogg_processor = await OggProcessor.from_buffer(buf);
                     send_results(ogg_processor);
                 }
