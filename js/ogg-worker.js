@@ -51,6 +51,6 @@ async function init_wasm_in_worker() {
                 break;
         }
     };
-};
+}
 
 init_wasm_in_worker();

@@ -29,3 +29,7 @@ fieldset {
 .horizontal-table td {
     align-self: flex-start;
 }
+
+.delete-button-confirm {
+    color: red;
+}

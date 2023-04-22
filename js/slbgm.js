@@ -86,7 +86,6 @@ export class TrackTransitions {
 
     static from_file_contents(file_contents) {
         const tracks = [];
-        let part_index = 0;
 
         for (const line of file_contents.split("\n")) {
             const line_parts = line.split(",");
@@ -107,6 +106,8 @@ export class TrackTransitions {
                 track_parts = tracks[track_index];
             }
 
+            const part_index = track_parts.length;
+            
             track_parts.push(new TransitionPart(
                 track_index,
                 part_index,
@@ -116,8 +117,6 @@ export class TrackTransitions {
                 trans_out,
                 next_part
             ));
-
-            part_index += 1;
         }
 
         return new TrackTransitions(tracks);
