@@ -49,11 +49,26 @@ export class TransitionPart {
         this.streams[0] = this.stream_index;
         this.streams[this.streams.length - 1] = this.stream_index + this.part_length - 1;
     }
+
+    clone() {
+        return new TransitionPart(
+            this.track_index,
+            this.part_index,
+            this.stream_index,
+            this.transition_into_stream,
+            this.part_length,
+            this.transition_out_stream,
+            this.next_part);
+    }
 }
 
 export class TrackTransitions {
     constructor(tracks) {
         this.tracks = tracks;
+    }
+
+    copy_from(other) {
+        this.tracks.splice(0, this.tracks.length, ...other.tracks);
     }
 
     static from_values(peaceful, combat) {
@@ -81,7 +96,7 @@ export class TrackTransitions {
 
     static async from_file(file) {
         const file_contents = await read_file(file, false);
-        return new TrackTransitions.from_file_contents(file_contents);
+        return TrackTransitions.from_file_contents(file_contents);
     }
 
     static from_file_contents(file_contents) {
@@ -120,6 +135,27 @@ export class TrackTransitions {
         }
 
         return new TrackTransitions(tracks);
+    }
+
+    to_text_format() {
+        let result = "";
+        for (const track of this.tracks) {
+            const parts = track.sort((a, b) => a.part_index - b.part_index);
+            for (const part of parts) {
+                const cells = [
+                    part.track_index,
+                    part.stream_index,
+                    part.transition_into_stream,
+                    part.part_length,
+                    part.transition_out_stream,
+                    part.next_part
+                ];
+                const row = cells.join(",") + "\n";
+                result += row;
+            }
+        }
+
+        return result;
     }
 }
 

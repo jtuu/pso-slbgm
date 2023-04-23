@@ -1,9 +1,20 @@
 import m from "mithril";
 import { Ogg, OggWorkerHandler } from "./ogg";
 import { TrackTransitions } from "./slbgm";
-import { Timer, StreamButtons, TrackControls, TrackList, TrackPartQueue, InputSelector, generate_track_labels } from "./components";
+import { Timer, StreamButtons, TrackControls, TrackList, TrackPartQueue, InputSelector } from "./components";
 
-//wasm_bindgen();
+wasm_bindgen();
+
+
+function download_file(filename, file_contents) {
+    const anchor = document.createElement("a");
+    anchor.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(file_contents));
+    anchor.setAttribute("download", filename);
+    anchor.style.display = "none";
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+}
 
 const App = {
     ogg: new Ogg(),
@@ -14,19 +25,23 @@ const App = {
     queue_duration: 0,
     track_index: 0,
     track_transitions: new TrackTransitions([]),
-    track_labels: [],
     track_part_queue: [],
     stream_queue: [],
     queue_updater_timeout: null,
     stream_stopper_timeout: null,
+    edit_mode_active: false,
+
+    is_edit_mode_active() {
+        return this.edit_mode_active;
+    },
+
+    set_edit_mode_active(mode) {
+        this.edit_mode_active = mode;
+        this.stop_playback();
+    },
 
     init_audio_from_gesture() {
         if (!this.audio) this.audio = new AudioContext();
-    },
-
-    regenerate_track_data(transitions) {
-        this.track_transitions.tracks.splice(0, this.track_transitions.tracks.length, ...transitions.tracks);
-        this.track_labels.splice(0, this.track_labels.length, ...generate_track_labels(transitions.tracks.length));
     },
 
     async process_slbgm_from_path(file_path, transitions) {
@@ -40,7 +55,7 @@ const App = {
         this.ogg.filename = file_path;
         await ogg_worker.from_path(this.audio, this.ogg, file_path);
         this.is_processing_ogg = false;
-        this.regenerate_track_data(transitions);
+        this.track_transitions.copy_from(transitions);
         m.redraw();
     },
 
@@ -55,8 +70,8 @@ const App = {
         const worker_working = ogg_worker.from_file(this.audio, this.ogg, slbgm_file);
         if (transition_file) {
             // Parse transition file while worker is working
-            const transitions = TrackTransitions.from_file(transition_file);
-            this.regenerate_track_data(transitions);
+            const transitions = await TrackTransitions.from_file(transition_file);
+            this.track_transitions.copy_from(transitions);
         }
         await worker_working;
         this.is_processing_ogg = false;
@@ -212,7 +227,7 @@ const App = {
         if (!this.is_file_selected) {
             return m(InputSelector, {
                 process_slbgm_from_path: this.process_slbgm_from_path.bind(this),
-                process_slbgm_from_file: this.process_slbgm_from_file
+                process_slbgm_from_file: this.process_slbgm_from_file.bind(this)
             });
         }
         if (this.is_processing_ogg) {
@@ -222,18 +237,21 @@ const App = {
             m("legend", this.ogg.filename),
             m(StreamButtons, {
                 play_stream: this.play_stream.bind(this),
-                streams: this.ogg.streams
+                streams: this.ogg.streams,
+                is_edit_mode_active: this.is_edit_mode_active.bind(this)
             }),
             m(TrackList, {
-                track_labels: this.track_labels,
                 tracks: this.track_transitions.tracks,
+                stream_count: this.ogg.streams.length,
                 change_track: this.change_track.bind(this),
-                play_track_part: this.play_track_part.bind(this)
+                play_track_part: this.play_track_part.bind(this),
+                is_edit_mode_active: this.is_edit_mode_active.bind(this),
+                set_edit_mode_active: this.set_edit_mode_active.bind(this)
             }),
             m(TrackPartQueue, {
                 stream_queue: this.stream_queue,
                 track_part_queue: this.track_part_queue,
-                track_labels: this.track_labels
+                track_count: this.ogg.streams.length
             },
                 m(Timer, {
                     playback_position: this.playback_position.bind(this),
@@ -247,7 +265,16 @@ const App = {
                 get_track_count: this.get_track_count.bind(this),
                 get_track_index: this.get_track_index.bind(this),
                 change_track: this.change_track.bind(this)
-            }));
+            }),
+            m("button", {
+                disabled: this.is_edit_mode_active(),
+                onclick: () => {
+                    const filename_no_ext = this.ogg.filename.split(".")[0];
+                    const out_filename = filename_no_ext + "_tracks.txt";
+                    const file_contents = this.track_transitions.to_text_format();
+                    download_file(out_filename, file_contents);
+                }
+            }, "Export track definitions"));
     }
 };
 

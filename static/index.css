@@ -9,6 +9,8 @@ fieldset {
 .track-list {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
 }
 
 .horizontal-table {
@@ -19,11 +21,15 @@ fieldset {
 .horizontal-table tr {
     display: flex;
     flex-direction: column;
-    margin: 0.3em;
+    padding: 0.3em;
 }
 
 .horizontal-table th {
     align-self: flex-end;
+}
+
+.horizontal-table th.vertical-header {
+    align-self: flex-start;
 }
 
 .horizontal-table td {
@@ -32,4 +38,21 @@ fieldset {
 
 .delete-button-confirm {
     color: red;
+}
+
+.track-part-editor {
+    outline: 1px solid black;
+}
+
+.track-part-editor input[type="text"] {
+    width: 2em;
+    height: 1em;
+}
+
+.track-part-editor input[type="text"]:invalid {
+    outline: 1px solid red;
+}
+
+.track-part-list > .delete-button {
+    float: right;
 }
