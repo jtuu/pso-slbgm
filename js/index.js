@@ -180,7 +180,7 @@ const App = {
             this.queue_next_track_part(out_part);
             in_part = this.track_part_queue[1];
         }
-        if (in_part.this.track_index === out_part.this.track_index) {
+        if (in_part.track_index === out_part.track_index) {
             out_part.reset_transitions();
             in_part.reset_transitions();
         } else {
@@ -251,7 +251,7 @@ const App = {
             m(TrackPartQueue, {
                 stream_queue: this.stream_queue,
                 track_part_queue: this.track_part_queue,
-                track_count: this.ogg.streams.length
+                track_count: this.track_transitions.tracks.length
             },
                 m(Timer, {
                     playback_position: this.playback_position.bind(this),
